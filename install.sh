@@ -13,7 +13,7 @@ cd /home
 
 # CORREÇÃO 1: Link do git correto (sem /tree/main)
 rm -rf /home/Reverseproxy # Limpa se já existir para evitar erro
-git clone https://github.com/Leonardo28113/Reverseproxy.git
+git clone https://github.com/Leonardo28l13/Reverseproxy.git
 
 # Cria diretório do Wings
 WINGSDIR="/srv/wings"
