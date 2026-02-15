@@ -11,8 +11,8 @@ echo -e "${VERDE}Iniciando instalação...${NC}"
 
 cd /home
 
-# CORREÇÃO 1: Link do git correto (sem /tree/main)
-rm -rf /home/Reverseproxy # Limpa se já existir para evitar erro
+# Limpa repo antigo se existir para baixar o novo
+rm -rf /home/Reverseproxy
 git clone https://github.com/Leonardo28l13/Reverseproxy.git
 
 # Cria diretório do Wings
@@ -20,16 +20,21 @@ WINGSDIR="/srv/wings"
 mkdir -p $WINGSDIR
 cd $WINGSDIR
 
-# CORREÇÃO 2: Baixa o código fonte do Wings corretamente
+# Baixa o código fonte do Wings
 echo -e "${VERDE}Baixando código fonte do Wings...${NC}"
 curl -L -o wings.zip $(curl -s https://api.github.com/repos/pterodactyl/wings/releases/latest | grep zipball_url | cut -d '"' -f 4)
 unzip -o wings.zip
-mv pterodactyl-wings-*/* .
-rm -rf pterodactyl-wings-* wings.zip
 
-# CORREÇÃO 3: Caminhos absolutos para evitar erros de cópia
+# --- CORREÇÃO AQUI ---
+# Usamos cp -rf em vez de mv para mesclar pastas existentes
+echo -e "${VERDE}Extraindo arquivos...${NC}"
+cp -rf pterodactyl-wings-*/* .
+rm -rf pterodactyl-wings-* wings.zip
+# ---------------------
+
 echo -e "${VERDE}Aplicando modificações...${NC}"
-cp -r /home/Reverseproxy/router/* $WINGSDIR/router/
+# Força a cópia dos arquivos modificados
+cp -rf /home/Reverseproxy/router/* $WINGSDIR/router/
 cp -f /home/Reverseproxy/router_server_proxy.go $WINGSDIR/router/
 
 # Instalação do GO
@@ -47,7 +52,7 @@ export PATH=$PATH:/usr/local/go/bin
 echo -e "${VERDE}Compilando Wings (isso pode demorar)...${NC}"
 cd $WINGSDIR
 
-systemctl stop wings || true # O "|| true" impede erro se o wings não estiver rodando
+systemctl stop wings || true
 
 # Instala dependências e compila
 go get github.com/go-acme/lego/v4
@@ -59,13 +64,11 @@ chmod +x /usr/local/bin/wings
 systemctl start wings
 
 # Instalação do Blueprint
-# CORREÇÃO 4: Corrigido erro de digitação (pterodactyl)
 echo -e "${VERDE}Instalando Blueprint...${NC}"
 if [ -d "/var/www/pterodactyl" ]; then
     cp -f /home/Reverseproxy/reverseproxy.blueprint /var/www/pterodactyl/
     cd /var/www/pterodactyl
     
-    # Verifica se o comando blueprint existe antes de rodar
     if command -v blueprint &> /dev/null; then
         blueprint -i reverseproxy
     else
